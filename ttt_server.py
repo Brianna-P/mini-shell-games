@@ -56,7 +56,7 @@ def handle_message(sock, msg):
                     sock.send(f"WINNER:{winner}\n".encode())
                     other.send(f"WINNER:{winner}\n".encode())
                     del games[(p1, p2)]
-                elif ' ' not in board:  
+                elif ' ' not in board:  # draw
                     sock.send(b"DRAW\n")
                     other.send(b"DRAW\n")
                     del games[(p1, p2)]
