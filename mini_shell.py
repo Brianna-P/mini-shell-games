@@ -3,13 +3,91 @@ import sys
 import tty
 import termios
 import time
+import signal
 
 best_snake_time = 0
 best_tetris_time = 0
 tic_wins = 0
+class bcolors:
+    WARNING = '\033[93m'
+    ENDC = '\033[0m'
+
+in_game_menu = False
+
+def signal_handler(signum, frame):
+    print(bcolors.WARNING + "\nUse 'exit' to quit the shell or Option 5 to exit the game menu" + bcolors.ENDC)
+    if in_game_menu:
+        print("\nWelcome to my Mini-Shell Mini-Game Menu!")
+        print("1. Snake")
+        print("2. Tetris")
+        print("3. Tic-Tac-Toe")
+        print("4. Multiplayer Tic-Tac-Toe with Client/Server")
+        print("5. Exit menu")
+        print()
+    else:
+        print("Type 'exit' or 'games' to continue...")
+        print("mini-shell> ", end="", flush=True)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGCHLD, signal.SIG_IGN)  
+
+def execute_command(cmd):
+    args = cmd.split()
+    if not args:
+        return
+    
+    stdout_file = None
+    stdin_file = None
+    append_mode = False
+    ##implementing I/O redirection for future use / logging
+    if '>>' in args:
+        idx = args.index('>>')
+        stdout_file = args[idx + 1]
+        append_mode = True
+        args = args[:idx]
+    elif '>' in args:
+        idx = args.index('>')
+        stdout_file = args[idx + 1]
+        args = args[:idx]
+    
+    if '<' in args:
+        idx = args.index('<')
+        stdin_file = args[idx + 1]
+        args = args[:idx]
+    
+    pid = os.fork()
+    if pid == 0: 
+        if stdout_file:
+            flags = os.O_WRONLY | os.O_CREAT
+            flags |= os.O_APPEND if append_mode else os.O_TRUNC
+            fd = os.open(stdout_file, flags, 0o644)
+            os.dup2(fd, 1)
+            os.close(fd)
+        
+        if stdin_file:
+            try:
+                fd = os.open(stdin_file, os.O_RDONLY)
+                os.dup2(fd, 0)
+                os.close(fd)
+            except FileNotFoundError:
+                print(f"Input file not found: {stdin_file}")
+                sys.exit(1)
+        
+        try:
+            os.execvp(args[0], args)
+        except FileNotFoundError:
+            print(f"Command not found: {args[0]}")
+            sys.exit(1)
+    else: 
+        os.waitpid(pid, 0)
+
 def launch_game():
     global best_snake_time
     global best_tetris_time
+    global tic_wins
+    global in_game_menu
+    in_game_menu = True
+
     while True:
         print("\nWelcome to my Mini-Shell Mini-Game Menu!")
         print("1. Snake")
@@ -53,11 +131,11 @@ def launch_game():
             print_tic_banner()
             os.system("python3 multiplayer.py") 
 
-
         elif choice == "5":
             break
         else:
             print("Invalid choice. Please enter 1, 2, 3, 4, or 5.")
+    in_game_menu = False
 
 def print_snake_banner():
     snake = r"""
@@ -81,7 +159,6 @@ def print_snake_banner():
     """
     print(snake)
     print("Welcome to Snake!\n")
-
 
 def wait_for_keypress(prompt="Press any key to start..."):
     print(prompt, end="", flush=True)
@@ -125,7 +202,6 @@ def print_tic_banner():
     print(tic)
     print("Welcome to Tic Tac Toe!!\n")
 
-
 while True:
     try:
         print("Type \'exit\' or \'games\' to continue...")
@@ -136,13 +212,6 @@ while True:
         elif cmd == "games":
             launch_game() 
         else:
-            args = cmd.split()
-            if args:
-                pid = os.fork()
-                if pid == 0:
-       
-                    os.execvp(args[0], args)
-                else:
-                    os.wait()
+            execute_command(cmd)
     except Exception as e:
         print(f"Error: {e}")
