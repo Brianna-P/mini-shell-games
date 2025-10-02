@@ -15,7 +15,8 @@ def launch_game():
         print("1. Snake")
         print("2. Tetris")
         print("3. Tic-Tac-Toe")
-        print("4. Exit menu")
+        print("4. Multiplayer Tic-Tac-Toe with Client/Server")
+        print("5. Exit menu")
         choice = input("Choose a game: ").strip()
         
         if choice == "1":
@@ -49,9 +50,14 @@ def launch_game():
             tic_wins += 1
             print(f"You have won Tic Tac Toe {tic_wins} times!")
         elif choice == "4":
+            print_tic_banner()
+            wait_for_keypress()
+            os.system("python3 multiplayer.py")
+
+        elif choice == "5":
             break
         else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
+            print("Invalid choice. Please enter 1, 2, 3, 4, or 5.")
 
 def print_snake_banner():
     snake = r"""
