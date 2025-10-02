@@ -51,8 +51,8 @@ def launch_game():
             print(f"You have won Tic Tac Toe {tic_wins} times!")
         elif choice == "4":
             print_tic_banner()
-            wait_for_keypress()
-            os.system("python3 multiplayer.py")
+            os.system("python3 multiplayer.py") 
+
 
         elif choice == "5":
             break
